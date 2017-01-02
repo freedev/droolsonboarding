@@ -1,0 +1,48 @@
+//created on: Dec 29, 2016
+package droolscours
+
+//list any import classes here.
+
+import droolscours.Account
+import util.OutputDisplay
+
+//declare any global variables here
+global OutputDisplay showResults
+
+
+rule "Your First Rule"
+
+    when
+    	Account()
+        //conditions
+    then
+        //actions
+        showResults.showText("The account exists");
+
+end
+
+rule "Your first rule revisited AccountingPeriod"
+    //include attributes such as "salience" here...
+    when
+        //conditions
+        CashFlow()
+        
+    then
+        //actions
+        showResults.showText("The CashFlow exists, inserting an accounting Period");
+        AccountingPeriod newPeriod = new AccountingPeriod();
+        insert(newPeriod);
+
+end
+
+rule "Rule on AccountingPeriod that are inserting"
+    //include attributes such as "salience" here...
+    when
+        //conditions
+        AccountingPeriod()
+        
+    then
+        //actions
+        showResults.showText("AccountingPeriod inserted");
+
+end

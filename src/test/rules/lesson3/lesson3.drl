@@ -1,0 +1,119 @@
+package cours
+
+//#list any import classes here.
+import droolscours.Account;
+import droolscours.CashFlow;
+import droolscours.PrivateAccount;
+import droolscours.Customer;
+import droolscours.AccountingPeriod;
+import droolscours.service.CustomerService;
+import util.OutputDisplay;
+import java.util.ArrayList;
+
+//#declare any global variables here
+global OutputDisplay showResult;
+global CustomerService serviceCustomer;
+
+rule "*The cashFlow can be a credit or a debit*"
+
+    when
+        CashFlow(type in ( CashFlow.DEBIT, CashFlow.CREDIT) )
+    then
+        showResult.showText("The cashFlow is a credit or a debit");
+end
+
+rule "*Nested Accessor*"
+    when
+        PrivateAccount( owner.name =="Héron" )
+    then
+        showResult.showText("Account is owned by Héron");
+end
+
+rule "*infixAnd*"
+    when
+      ( $c1 : Customer(country=="GB") and PrivateAccount(owner == $c1) )
+            or
+       ( $c1 : Customer(country=="US") and PrivateAccount(owner == $c1) )
+    then
+        showResult.showText("Person lives in GB or US");
+end
+
+rule "*no customer*"
+    when
+        not Customer(  )
+    then
+        showResult.showText("No customer");
+end
+
+rule "*Exists*"
+    when
+        exists Account(  )
+    then
+        showResult.showText("Account exists");
+end
+
+rule "*ForAll*"
+    when
+        forall ( Account( $no : accountNo  )
+                    CashFlow( accountNo  == $no)
+                   )
+    then
+        showResult.showText("All cashflows are related to an Account ");
+end
+
+rule "*FromCondition*"
+    when
+        $c : Customer()
+        $cc : Customer(name ==$c.name,surname==$c.surname,country !=$c.country) from serviceCustomer.getListCustomer();
+    then
+        showResult.showText("Found same customer in 2 countries");
+end
+
+rule "*More then 2 CashFlow Line*"
+    when
+        $c : Account( $acc : accountNo )
+        $p : AccountingPeriod ($sDate : startDate ,$eDate : endDate )
+        $number : ArrayList(size >= 2 )
+              from collect( CashFlow( mvtDate >= $sDate && mvtDate  <= $eDate,accountNo == $acc ) )
+
+    then
+        showResult.showText("Found more than 2 CashFlow Lines");
+        showResult.showText("<<<<<<<<<<");
+        for (Object ff : $number){
+            showResult.showText(ff.toString());
+        }
+        showResult.showText(">>>>>>>>>>>>>>>>");
+end
+
+rule "*Numbers of  CashFlow Line*"
+    when
+        $c : Account( $acc : accountNo )
+        $p : AccountingPeriod ($sDate : startDate ,$eDate : endDate )
+        $number : ArrayList( )
+              from collect( CashFlow( mvtDate >= $sDate && mvtDate  <= $eDate,accountNo == $acc ) )
+
+    then
+        showResult.showText("Found "+$number+" more than 2 CashFlow Lines");
+end
+
+rule "Credit and Debit Rule"
+    when
+        $c : Account( $acc : accountNo )
+        $p : AccountingPeriod ($sDate : startDate ,$eDate : endDate )
+        $totalCredit : Number( doubleValue > 100 )
+             from accumulate( CashFlow( type ==CashFlow.CREDIT,$value : amount, mvtDate >= $sDate && mvtDate  <= $eDate,accountNo == $acc ),
+                              init( double total = 0; ),
+                              action( total += $value; ),
+                              reverse( total -= $value; ),
+                              result( total ) )
+        $totalDebit : Number( doubleValue > 100 )
+             from accumulate( CashFlow( type ==CashFlow.DEBIT,$value : amount, mvtDate >= $sDate && mvtDate  <= $eDate,accountNo == $acc ),
+                              init( double total = 0; ),
+                              action( total += $value; ),
+                              reverse( total -= $value; ),
+                              result( total ) )
+
+    then
+        showResult.showText(" Found "+$totalCredit+" as a credit");
+        showResult.showText(" Found "+$totalDebit+" as a debit");
+end
